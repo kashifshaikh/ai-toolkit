@@ -1,0 +1,141 @@
+---
+job: extension
+config:
+  # this name will be the folder and filename name
+  name: "rock-lora-v2"
+  process:
+    - type: 'sd_trainer'
+      # root folder to save training sessions/samples/weights
+      training_folder: "output/loras"      
+      # performance_log_every: 1000
+      device: cuda:0
+      # if a trigger word is specified, it will be added to captions of training data if it does not already exist
+      # alternatively, in your captions you can add [trigger] and it will be replaced with the trigger word
+      trigger_word: "ohwx man"
+      network:
+        type: "lora"
+        linear: 16
+        linear_alpha: 16
+      save:
+        dtype: float16 # precision to save
+        save_every: 200 # save every this many steps
+        max_step_saves_to_keep: 15 # how many intermittent saves to keep
+        push_to_hub: false #change this to True to push your trained model to Hugging Face.
+        # You can either set up a HF_TOKEN env variable or you'll be prompted to log-in         
+#       hf_repo_id: your-username/your-model-slug
+#       hf_private: true #whether the repo is private or public
+      datasets:
+        # datasets are a folder of images. captions need to be txt files with the same name as the image
+        # for instance image2.jpg and image2.txt. Only jpg, jpeg, and png are supported currently
+        # images will automatically be resized and bucketed into the resolution specified
+        # on windows, escape back slashes with another backslash so
+        # "C:\\path\\to\\images\\folder"
+        - folder_path: "/home/wsl/src/ai-toolkit/training/rock"
+          caption_ext: "txt"
+          caption_dropout_rate: 0.05  # will drop out the caption 5% of time
+          shuffle_tokens: false  # shuffle caption order, split by commas
+          cache_latents_to_disk: true  # leave this true unless you know what you're doing
+          resolution: [ 512, 768, 1024 ]  # flux enjoys multiple resolutions
+      train:
+        batch_size: 1
+        steps: 2500  # total number of steps to train 500 - 4000 is a good range
+        gradient_accumulation_steps: 1
+        train_unet: true
+        train_text_encoder: false  # probably won't work with flux
+        # content_or_style: balanced
+        gradient_checkpointing: true  # need the on unless you have a ton of vram
+        noise_scheduler: "flowmatch" # for training only
+        optimizer: "adamw8bit"
+        lr: 4e-4
+        # uncomment this to skip the pre training sample
+        skip_first_sample: true
+        # uncomment to completely disable sampling
+#        disable_sampling: true
+        # uncomment to use new vell curved weighting. Experimental but may produce better results
+#        linear_timesteps: true
+
+        # ema will smooth out learning, but could slow it down. Recommended to leave on.
+        ema_config:
+          use_ema: true
+          ema_decay: 0.99
+
+        # will probably need this if gpu supports it for flux, other dtypes may not work correctly
+        dtype: bf16
+      model:
+        # huggingface model name or path
+        name_or_path: "black-forest-labs/FLUX.1-dev"
+        is_flux: true
+        quantize: true  # run 8bit mixed precision
+        low_vram: true  # uncomment this if the GPU is connected to your monitors. It will use less vram to quantize, but is slower.
+      sample:
+        sampler: "flowmatch" # must match train.noise_scheduler
+        sample_every: 200 # sample every this many steps
+        width: 1024
+        height: 1024
+        prompts:
+          # you can add [trigger] to the prompts here and it will be replaced with the trigger word
+          - close headshot portrait photograph of ohwx man wearing a super expensive white suit, a light blue shirt and a black tie in a photo studio lighting hdr. The studio backdrop is a rich, deep black that makes the white suit pop dramatically. Professional lighting creates a perfect balance of highlights and shadows, accentuating his facial features. The suit is impeccably tailored, with subtle textures visible in the fabric. His tie is made of the finest silk, with a subtle pattern that catches the light. his expression is one of confident professionalism<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - mid portrait photograph of ohwx man wearing a super expensive black suit, a white shirt and a blue tie in a photo studio lighting hdr. The studio backdrop is a rich, deep white that makes the black suit pop dramatically. Professional lighting creates a perfect balance of highlights and shadows, accentuating his facial features. The suit is impeccably tailored, with subtle textures visible in the fabric. His tie is made of the finest silk, with a subtle pattern that catches the light. his expression is one of confident professionalism<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - photograph of ohwx man wearing an amazing white suit and a red shirt, wearing a black tie and very long thick blue beard and he is in a luxury coffee shop in paris<segment:yolo-face_yolov9c.pt-1,0.6,0.5>photograph of ohwx man with red hair and very long thick blue beard
+
+          - muscular hdr 4k photograph of ohwx man wearing an amazing elven glowing shiny steel with gold robe over it full body full pant armor and standing in an ancient majestic elf city. The armor is a masterpiece of elven craftsmanship, with intricate designs etched into the steel and gold accents that catch the light. The robe flows gracefully over the armor, adding an air of regality. The lighting is dramatic, with the warm glow of a setting sun casting long shadows and highlighting the metallic sheen of the armor. His muscular physique is evident even through the armor, suggesting great strength and agility. They are elegantly crafted, with thin golden frames that complement the armor's design. His expression is one of confidence and wisdom, befitting a warrior-scholar in this ancient setting<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - muscular medium shot professional photograph of ohwx man wearing an amazing high-tech iron man red full body armor suit with glowing accents and standing on the top of a tall skyscraper on a sunny day. The armor is a masterpiece of advanced engineering, with intricate circuitry and repulsor technology integrated into the sleek metallic plates. The lighting is dramatic, with the bright blue glow of the arc reactor in the chest and repulsors in the palms and boots. His muscular physique is enhanced by the armor, suggesting superhuman strength. His expression is one of confidence determination, befitting a superhero in this cutting-edge setting<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - The Witcher game engine 3d cgi render image of ohwx man with body armor and wearing eyeglasses
+
+          - World of Warcraft game engine 3d cgi render image of ohwx man with body armor and wearing eyeglasses
+
+          # - photograph of ohwx man riding a majestic, muscular white tiger through a dense mystical forest, with trees towering overhead, their twisted branches forming an intricate canopy. The air is filled with glowing fireflies and floating specks of light, creating an ethereal atmosphere. Ohwx wears a regal, intricately embroidered tunic woven with golden threads depicting ancient symbols, a flowing cape with a high collar that shimmers in the dim, magical light. His leather boots have silver buckles, each carved with ornate designs. The tiger's fur glows in the moonlight, and its striking blue eyes mirror Ohwx's vigilant expression<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          # - photograph of ohwx man riding a gigantic, majestic elephant through the dense, vibrant Indian jungle, with thick, lush foliage all around and the sunlight filtering through the canopy. The elephant's tusks and trunk are adorned with traditional decorations, shimmering in the sunlight. Ohwx wears the traditional royal attire of a Maharaja, including a richly embroidered silk robe with intricate gold patterns, a bejeweled turban adorned with a large emerald, and a flowing sash tied at his waist. He sits proudly atop the elephant, exuding a sense of power and grandeur. The jungle hums with life, from vibrant birds to distant animal calls<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          # - close shot photograph of ohwx man standing on the moon's surface, surrounded by a breathtaking view of Earth in the sky, the stars glittering in the dark void, wearing a futuristic space suit with chrome accents, sleek aerodynamic design, featuring small blue LED lights integrated into the joints that softly glow in the shadow of space. His boots are magnetized to the lunar surface, his gloves feature intricate mechanical joints, and his suit reflects the harsh lunar light. He holds a flag that waves gently in the zero gravity, with the barren, cratered lunar landscape stretching out behind him. His face, partially illuminated by the suit's helmet lights, shows determination and awe at the vastness of space<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          # - photograph of ohwx man riding a galloping horse through the vast, dusty plains of the Wild West, dust flying up around him as his steed charges forward. He wears a classic cowboy outfit, complete with a wide-brimmed hat that casts a shadow over his face, a leather duster coat that flows dramatically behind him in the wind, a bandana tied around his neck, and rugged denim jeans with leather chaps. His weathered boots stir up the dirt as the horse charges on. The vast frontier stretches out endlessly behind him, under a wide blue sky<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - ohwx man, body armor glowing with energy, sci-fi setting<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - ohwx man, ornate, ceremonial armor, intricate details<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - a portrait of ohwx man as a wise, old sage, his face etched with wisdom
+
+          # - ohwx man, poster design for a theatre production, dramatic, eye-catching
+
+          - photograph of ohwx man standing at the edge of a volcanic crater, with molten lava bubbling far below and ash-filled skies swirling above. He wears a heat-resistant suit with reinforced armor plating on the shoulders and chest, designed to protect him from the intense heat of the volcano. A high-collared cape billows dramatically in the hot wind, and his gloves have embedded cooling systems to keep his hands steady. His expression is resolute, as he faces the raw, untamed power of nature<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          # - photograph of ohwx man walking along a serene beach at sunset, the sky ablaze with vibrant hues of orange, pink, and purple. The waves gently lap at the shore, and the air is filled with the calming sounds of the ocean. He wears a loose, flowing linen shirt in a light pastel color, paired with white trousers and simple sandals. His figure reflects tranquility, as he walks barefoot along the shore, leaving soft footprints in the sand. The scene is filled with a sense of peace and reflection<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - photograph of ohwx man standing in the middle of a bustling futuristic city at night, surrounded by glowing neon lights, holographic billboards, and advanced technology. He wears a sleek, metallic suit that hugs the contours of his body, with glowing neon lines running along the seams and a high-tech visor that partially covers his eyes. His presence commands attention amidst the technological marvels of the city. The city hums with energy, and his expression is one of focus and determination<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          # - photograph of ohwx man riding a majestic black panther through a dense jungle at night, with the moonlight filtering through the trees and the panther's eyes glowing in the dark. The jungle is alive with the sounds of nocturnal creatures, and the air is thick with mystery. Exotic flowers bloom in the moonlight, their luminescent petals adding an otherworldly glow to the scene. Vines hang from ancient trees, their leaves glistening with dew. In the distance, a waterfall cascades into a misty pool, its rushing sound barely audible over the symphony of the jungle. Fireflies dance between the trees, their lights blinking in mesmerizing patterns. The undergrowth rustles with unseen creatures, and the calls of night birds echo through the canopy. He wears a dark, form-fitting suit made from a material that blends into the shadows, a belt with silver accents, and gloves that allow for a firm grip on the panther's sleek fur. His expression is one of calm power as he moves silently through the jungle. Moonlight casts dappled shadows across the forest floor, creating an ever-shifting landscape of light and dark<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - photograph of ohwx man standing on the deck of a pirate ship, with stormy seas raging all around. The wind howls, and the ship creaks as it battles the waves. Ohwx wears a traditional pirate captain’s outfit, complete with a long, tattered coat that flaps wildly in the wind, a tricorn hat adorned with feathers, knee-high leather boots, and a sash filled with various weapons. His expression is fierce and determined as he faces the elements<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - photograph of ohwx man standing in the middle of a grand ballroom, dressed in a luxurious suit made of deep, rich velvet, with a satin cravat tied elegantly around his neck. A silver pocket watch chain drapes across his waistcoat, and his polished leather shoes gleam under the soft glow of the chandeliers overhead. The ballroom is filled with opulent decorations, from gilded mirrors to intricate wall carvings, and the air is heavy with sophistication. His posture exudes confidence and elegance<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - photograph of ohwx man riding a powerful motorcycle through a post-apocalyptic wasteland, with ruined buildings and desolate landscapes stretching out behind him. The sky is filled with dark clouds, and the air is thick with dust and debris. He wears a rugged, armored jacket with metal plates embedded into the fabric for protection, fingerless gloves, and heavy-duty boots covered in dust. A bandolier slung across his chest holds various survival tools, and his expression is one of gritty determination<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          # - photograph of ohwx man walking through the corridors of an ancient Egyptian pyramid, with walls covered in intricate hieroglyphs and the air thick with the weight of history. He wears a linen tunic with gold accents, the fabric flowing gracefully as he moves, and a wide leather belt adorned with ancient symbols. Sandals with straps that wrap up his calves make soft sounds against the stone floor. His headdress, with a cobra emblem gleaming at the front, adds an air of authority. He holds a torch that casts flickering shadows across the ancient walls<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          # - photograph of ohwx man as the last Emperor of Russia, in the style of a formal royal portrait. He stands in the Winter Palace's opulent Malachite Room, wearing the full dress uniform of the Preobrazhensky Regiment. The uniform is midnight blue with gold epaulettes, aiguillettes, and buttons. Across his chest is the blue sash of the Order of St. Andrew, and numerous medals and orders cover his breast. He wears the Imperial Crown of Russia, its diamonds and pearls glittering in the light of crystal chandeliers. In one hand he holds an ornate sword, in the other the orb and scepter. Behind him, the room's famous malachite columns and gilded mirrors create a backdrop of unparalleled luxury. Through the window, the spire of the Peter and Paul Fortress can be seen, snow falling gently on the Neva River. The portrait captures both the splendor and the fragility of the last days of imperial Russia<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          # - photograph of ohwx man as Suleiman the Magnificent leading his army into battle. He sits astride a magnificent white Arabian stallion, wearing a suit of gilded armor inlaid with Quranic verses in silver. His horsetail-plumed helmet gleams in the sun, and he carries a jewel-encrusted scimitar. Over his armor, he wears a heavy brocade cloak lined with sable fur. Behind him, the vast Ottoman army stretches as far as the eye can see - Janissaries with their distinctive tall white hats, Sipahi cavalry with their curved sabers, and artillery crews with massive bronze cannons. Banners bearing the crescent moon and star flutter in the breeze. In the distance, the domes and minarets of a besieged city can be seen, with smoke rising from bombardment<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          # - photograph of ohwx man as an Ottoman Admiral, standing on the prow of his flagship during the Battle of Lepanto. He wears a naval commander's uniform of the period - a short jacket of green velvet over a silk shirt, voluminous şalvar trousers tucked into high leather boots, and a turban wrapped around a tall felt cap. A jeweled aigrette in the shape of a ship adorns his turban. He holds a telescope in one hand and grips the hilt of his sword with the other. Behind him, the massive Ottoman galleys stretch to the horizon, their oars churning the sea to foam. Cannons belch smoke and fire, while archers on the rigging loose volleys of arrows. The air is thick with gunpowder smoke, and the sea is littered with debris from shattered ships<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - photograph of ohwx man standing on a glacier in Antarctica, with towering snow-capped mountains and endless ice fields stretching out behind him. The cold is palpable, with snowflakes gently falling from the sky. He wears a thick, fur-lined parka with a high collar to shield against the freezing winds, insulated pants, and heavy-duty snow boots with crampons for traction on the ice. His expression is one of steely determination as he stands against the biting cold<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          # - photograph of ohwx man standing in the middle of a grand library, with towering bookshelves filled with ancient tomes and scrolls. The air is thick with the smell of old paper and leather-bound books. He wears a long, scholarly robe adorned with embroidered symbols of wisdom, a leather satchel slung over one shoulder filled with scrolls, and reading glasses perched on his nose. His expression is thoughtful and introspective, as if contemplating the mysteries of the universe<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+        neg: ""  # not used on flux
+        seed: 42
+        walk_seed: true
+        guidance_scale: 3.5
+        sample_steps: 20
+# you can add any additional meta info here. [name] is replaced with config name at top
+meta:
+  name: "[name]"
+  version: '1.0'
