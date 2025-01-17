@@ -1,0 +1,88 @@
+job: extension
+config:
+  name: sweaty_shirt_flux_v5
+  process:
+  - type: sd_trainer
+    training_folder: output/sweatyFlux5
+    device: cuda:0
+    network:
+      type: lora
+      linear: 2
+      linear_alpha: 16
+    save:
+      dtype: float16
+      save_every: 760
+      max_step_saves_to_keep: 24
+    datasets:
+    - folder_path: J:/train/sweatpit/img/2_s3t shirt
+      caption_ext: txt
+      caption_dropout_rate: 0.0
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      resolution:
+      - 512
+      - 768
+      - 1024
+    - folder_path: J:/train/sweatpit/img/reg
+      caption_ext: txt
+      is_reg: true
+      caption_dropout_rate: 0.0
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      resolution:
+      - 512
+    train:
+      reg_weight: 0.25
+      batch_size: 1
+      steps: 7800
+      gradient_accumulation_steps: 1
+      train_unet: true
+      train_text_encoder: false
+      content_or_style: content
+      gradient_checkpointing: true
+      noise_scheduler: flowmatch
+      optimizer: adamw8bit
+      linear_timesteps: true
+      lr: 0.0005
+      skip_first_sample: true
+      ema_config:
+        use_ema: true
+        ema_decay: 0.99
+      dtype: bf16
+    model:
+      name_or_path: black-forest-labs/FLUX.1-dev
+      is_flux: true
+      quantize: true
+    sample:
+      sampler: flowmatch
+      sample_every: 760
+      width: 1024
+      height: 1024
+      prompts:
+      - photo, Prince Harry is wearing a light blue shirt with sweat and has his arms
+        raised in the air holding a sign that says 'SMELL MY ARMPITS!'. He is surrounded
+        by a group of people some of whom are wearing military uniforms. There is
+        a woman with blonde hair in the foreground looking up at the man with her
+        arms raised as well. In the background there are more people with their arms
+        raised cheering and clapping., small s3t on armpit, ginger, bad quality, blurry
+        image, jpeg artifacts, low-res, shirt, multiple boys, brown hair, wristwatch,
+        realistic, camouflage, white shirt, facial hair, arms up, collared shirt,
+        watch, pants, jewelry, bracelet, open mouth
+      - photo, A man with a tattoo on his left arm is wearing a gray t-shirt that
+        is soaked with sweat. The t-shirt is dripping with sweat and there are measurement
+        markings on the shirt that show the amount of sweat dripping from it. The
+        man's face is serious and he is looking directly at the camera. The background
+        is black and the man is standing in the center of the frame., s3t on chest,
+        cropped face, s3t on armpit, caucasian, tattoo on his arm, 1boy, solo, male
+        focus, shirt, head out of frame, simple background, tattoo, upper body, black
+        background, short sleeves, grey shirt, white shirt, facial hair, facing viewer,
+        t-shirt, closed mouth, realistic
+      neg: ''
+      seed: 42
+      walk_seed: true
+      guidance_scale: 4
+      sample_steps: 20
+meta:
+  name: '[Diogod]'
+  version: '4.0'
+  notes: reg-smudges-IncreasedTR-2/16-nodrop-reg0.25-lr0.0005

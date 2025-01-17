@@ -1,0 +1,112 @@
+job: extension
+config:
+  name: kwFemaleBeta60_FLUX_v1
+  process:
+  - type: sd_trainer
+    training_folder: output
+    device: cuda:0
+    network:
+      type: lora
+      linear: 256
+      linear_alpha: 256
+      transformer_only: false
+    save:
+      dtype: float32
+      save_every: 60
+      max_step_saves_to_keep: 4
+      push_to_hub: false
+    datasets:
+    - folder_path: F:\Stable Diffusion\kohya_training\image
+      caption_ext: txt
+      caption_dropout_rate: 0
+      shuffle_tokens: false
+      cache_latents_to_disk: true
+      resolution:
+      - 1024
+    train:
+      batch_size: 1
+      steps: 720
+      gradient_accumulation_steps: 1
+      train_unet: true
+      train_text_encoder: false
+      gradient_checkpointing: true
+      noise_scheduler: flowmatch
+      optimizer: adamw
+      lr: 0.0001
+      lr_scheduler: constant
+      skip_first_sample: true
+      disable_sampling: true
+      dtype: fp32
+    model:
+      name_or_path: black-forest-labs/FLUX.1-dev
+      is_flux: true
+      quantize: false
+      low_vram: true
+      t5_classifier_dropout: 0.0
+      t5_d_ff: 10240
+      t5_d_kv: 64
+      t5_d_model: 4096
+      t5_decoder_start_token_id: 0
+      t5_dense_act_fn: gelu_new
+      t5_dropout_rate: 0.1
+      t5_eos_token_id: 1
+      t5_feed_forward_proj: gated-gelu
+      t5_initializer_factor: 1.0
+      t5_is_encoder_decoder: true
+      t5_is_gated_act: true
+      t5_layer_norm_epsilon: 1.0e-06
+      t5_num_decoder_layers: 24
+      t5_max_length: 512
+      t5_num_heads: 64
+      t5_num_layers: 24
+      t5_output_past: true
+      t5_pad_token_id: 0
+      t5_relative_attention_max_distance: 128
+      t5_relative_attention_num_buckets: 32
+      t5_tie_word_embeddings: false
+      t5_use_cache: true
+      t5_vocab_size: 32128
+      clip_attention_dropout: 0.0
+      clip_bos_token_id: 0
+      clip_dropout: 0.0
+      clip_eos_token_id: 2
+      clip_hidden_act: quick_gelu
+      clip_hidden_size: 768
+      clip_initializer_factor: 1.0
+      clip_initializer_range: 0.02
+      clip_intermediate_size: 3072
+      clip_layer_norm_eps: 1.0e-05
+      clip_max_length: 77
+      clip_num_attention_heads: 12
+      clip_num_hidden_layers: 12
+      clip_pad_token_id: 1
+      clip_projection_dim: 768
+      clip_vocab_size: 49408
+    sample:
+      sampler: flowmatch
+      sample_every: 1000
+      width: 1024
+      height: 1024
+      prompts:
+      - woman with red hair, playing chess at the park, bomb going off in the background
+      - a woman holding a coffee cup, in a beanie, sitting at a cafe
+      - a horse is a DJ at a night club, fish eye lens, smoke machine, lazer lights,
+        holding a martini
+      - a man showing off his cool new t shirt at the beach, a shark is jumping out
+        of the water in the background
+      - a bear building a log cabin in the snow covered mountains
+      - woman playing the guitar, on stage, singing a song, laser lights, punk rocker
+      - hipster man with a beard, building a chair, in a wood shop
+      - photo of a man, white background, medium shot, modeling clothing, studio lighting,
+        white backdrop
+      - a man holding a sign that says, 'this is a sign'
+      - a bulldog, in a post apocalyptic world, with a shotgun, in a leather jacket,
+        in a desert, with a motorcycle
+      neg: ''
+      seed: 42
+      walk_seed: true
+      guidance_scale: 4
+      sample_steps: 20
+meta:
+  name: kwFemaleBeta60_FLUX_v1
+  version: '1.0'

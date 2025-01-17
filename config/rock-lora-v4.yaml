@@ -1,9 +1,8 @@
 ---
 job: extension
 config:
-  # NOT CONVERGING - 
   # this name will be the folder and filename name
-  name: "rock-lora-v3"
+  name: "rock-lora-v4"
   process:
     - type: 'sd_trainer'
       # root folder to save training sessions/samples/weights
@@ -15,8 +14,8 @@ config:
       trigger_word: "ohwx man"
       network:
         type: "lora"
-        linear: 32
-        linear_alpha: 32
+        linear: 16
+        linear_alpha: 16
       save:
         dtype: float16 # precision to save
         save_every: 200 # save every this many steps
@@ -34,20 +33,22 @@ config:
         - folder_path: "/home/wsl/src/ai-toolkit/training/rock"
           is_reg: false
           caption_ext: "txt"
-          caption_dropout_rate: 0.05  # will drop out the caption 5% of time
+          caption_dropout_rate: 0.00  # will drop out the caption 5% of time
           shuffle_tokens: false  # shuffle caption order, split by commas
           cache_latents_to_disk: true  # leave this true unless you know what you're doing
           resolution: [ 512, 768, 1024 ]  # flux enjoys multiple resolutions
         - folder_path: "/home/wsl/src/ai-toolkit/training/rock-reg"
           caption_ext: txt
           is_reg: true
-          caption_dropout_rate: 0.05
+          caption_dropout_rate: 0.00
           shuffle_tokens: false
           cache_latents_to_disk: true
           resolution: [ 512, 768, 1024 ]  # flux enjoys multiple resolutions
       train:
+        reg_weight: 0.25
+        content_or_style: content
         batch_size: 1
-        steps: 5000  # total number of steps to train 500 - 4000 is a good range
+        steps: 2500  # total number of steps to train 500 - 4000 is a good range
         gradient_accumulation_steps: 1
         train_unet: true
         train_text_encoder: false  # probably won't work with flux

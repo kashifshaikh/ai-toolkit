@@ -1,9 +1,8 @@
 ---
 job: extension
 config:
-  # NOT CONVERGING - 
   # this name will be the folder and filename name
-  name: "rock-lora-v3"
+  name: "rock-lora-v6"
   process:
     - type: 'sd_trainer'
       # root folder to save training sessions/samples/weights
@@ -20,7 +19,7 @@ config:
       save:
         dtype: float16 # precision to save
         save_every: 200 # save every this many steps
-        max_step_saves_to_keep: 30 # how many intermittent saves to keep
+        max_step_saves_to_keep: 100 # how many intermittent saves to keep
         push_to_hub: false #change this to True to push your trained model to Hugging Face.
         # You can either set up a HF_TOKEN env variable or you'll be prompted to log-in         
 #       hf_repo_id: your-username/your-model-slug
@@ -34,20 +33,22 @@ config:
         - folder_path: "/home/wsl/src/ai-toolkit/training/rock"
           is_reg: false
           caption_ext: "txt"
-          caption_dropout_rate: 0.05  # will drop out the caption 5% of time
+          caption_dropout_rate: 0.00  # will drop out the caption 5% of time
           shuffle_tokens: false  # shuffle caption order, split by commas
           cache_latents_to_disk: true  # leave this true unless you know what you're doing
           resolution: [ 512, 768, 1024 ]  # flux enjoys multiple resolutions
         - folder_path: "/home/wsl/src/ai-toolkit/training/rock-reg"
           caption_ext: txt
           is_reg: true
-          caption_dropout_rate: 0.05
+          caption_dropout_rate: 0.00
           shuffle_tokens: false
           cache_latents_to_disk: true
           resolution: [ 512, 768, 1024 ]  # flux enjoys multiple resolutions
       train:
+        reg_weight: 0.25
+        content_or_style: content
         batch_size: 1
-        steps: 5000  # total number of steps to train 500 - 4000 is a good range
+        steps: 4000  # total number of steps to train 500 - 4000 is a good range
         gradient_accumulation_steps: 1
         train_unet: true
         train_text_encoder: false  # probably won't work with flux
@@ -55,7 +56,7 @@ config:
         gradient_checkpointing: true  # need the on unless you have a ton of vram
         noise_scheduler: "flowmatch" # for training only
         optimizer: "adamw8bit"
-        lr: 3e-4
+        lr: 5e-5
         # uncomment this to skip the pre training sample
         skip_first_sample: true
         # uncomment to completely disable sampling
@@ -84,6 +85,13 @@ config:
         prompts:
           # you can add [trigger] to the prompts here and it will be replaced with the trigger word
           - close headshot portrait photograph of ohwx man wearing a super expensive white suit, a light blue shirt and a black tie in a photo studio lighting hdr. The studio backdrop is a rich, deep black that makes the white suit pop dramatically. Professional lighting creates a perfect balance of highlights and shadows, accentuating his facial features. The suit is impeccably tailored, with subtle textures visible in the fabric. His tie is made of the finest silk, with a subtle pattern that catches the light. his expression is one of confident professionalism<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - "woman holding a sign that says 'I LOVE PROMPTS!'"
+          - "a beautiful young woman on a beach"
+          - "woman with red hair, playing chess at the park, bomb going off in the background"
+          - "a man playing the guitar, on stage, singing a song, laser lights, punk rocker"
+          - "hipster man with a beard, building a chair, in a wood shop"                    
+          - "a muscular man, in a post apocalyptic world, with a shotgun, in a leather jacket, in a desert, with a motorcycle"                    
 
           - mid portrait photograph of ohwx man wearing a super expensive black suit, a white shirt and a blue tie in a photo studio lighting hdr. The studio backdrop is a rich, deep white that makes the black suit pop dramatically. Professional lighting creates a perfect balance of highlights and shadows, accentuating his facial features. The suit is impeccably tailored, with subtle textures visible in the fabric. His tie is made of the finest silk, with a subtle pattern that catches the light. his expression is one of confident professionalism<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
 

@@ -6,7 +6,7 @@ config:
   process:
     # process 1
     - type: to_folder  # process images to a folder
-      output_folder: "output/reg"
+      output_folder: "training/rock/reg"
       device: cuda:0 # cpu, cuda:0, etc
       generate:
         # these are your defaults you can override most of them with flags
@@ -44,7 +44,7 @@ config:
 
         prompt_file: true # if true a txt file will be created next to images with prompt strings used
         # prompts can also be a path to a text file with one prompt per line
-        prompts: "/path/to/prompts.txt"
+        prompts: "training/rock/reg/prompts.txt"
         #prompts:
         #  - "photo of batman"
         #  - "photo of superman"

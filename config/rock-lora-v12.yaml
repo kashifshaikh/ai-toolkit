@@ -1,9 +1,8 @@
 ---
 job: extension
 config:
-  # NOT CONVERGING - 
   # this name will be the folder and filename name
-  name: "rock-lora-v3"
+  name: "rock-lora-v12"
   process:
     - type: 'sd_trainer'
       # root folder to save training sessions/samples/weights
@@ -12,15 +11,21 @@ config:
       device: cuda:0
       # if a trigger word is specified, it will be added to captions of training data if it does not already exist
       # alternatively, in your captions you can add [trigger] and it will be replaced with the trigger word
-      trigger_word: "ohwx man"
+      trigger_word: "ohwx"
+      logging: 
+        use_wandb: true # enable wandb by this flag
+        project_name: ai-toolkit # default is "ai-toolkit"
+        run_name: rock-lora-v12 # empty here to use random generated name by wandb
       network:
         type: "lora"
-        linear: 32
-        linear_alpha: 32
+        linear: 64
+        linear_alpha: 64
+        # it depends on the finality of your LoRA. My tests shows that Linear Alpha = Linear is a good base choice for many purposes. 
+        # But, linear_alpha=2 x linear gives more "natural" results for characters and faces. Based on my own experience, but I did at least 50 tests for the alpha parameter.
       save:
         dtype: float16 # precision to save
         save_every: 200 # save every this many steps
-        max_step_saves_to_keep: 30 # how many intermittent saves to keep
+        max_step_saves_to_keep: 100 # how many intermittent saves to keep
         push_to_hub: false #change this to True to push your trained model to Hugging Face.
         # You can either set up a HF_TOKEN env variable or you'll be prompted to log-in         
 #       hf_repo_id: your-username/your-model-slug
@@ -34,20 +39,30 @@ config:
         - folder_path: "/home/wsl/src/ai-toolkit/training/rock"
           is_reg: false
           caption_ext: "txt"
-          caption_dropout_rate: 0.05  # will drop out the caption 5% of time
+          caption_dropout_rate: 0.00  # will drop out the caption 5% of time
           shuffle_tokens: false  # shuffle caption order, split by commas
           cache_latents_to_disk: true  # leave this true unless you know what you're doing
           resolution: [ 512, 768, 1024 ]  # flux enjoys multiple resolutions
+          # resolution: [ 1024 ]  # flux enjoys multiple resolutions
+          # num_repeats: 2
         - folder_path: "/home/wsl/src/ai-toolkit/training/rock-reg"
           caption_ext: txt
           is_reg: true
-          caption_dropout_rate: 0.05
+          caption_dropout_rate: 0.00
+          #  caption_dropout_rate: 0.10
           shuffle_tokens: false
           cache_latents_to_disk: true
           resolution: [ 512, 768, 1024 ]  # flux enjoys multiple resolutions
+          # resolution: [ 1024 ]  # flux enjoys multiple resolutions
+          # num_repeats: 1
       train:
+        reg_weight: 0.20
+
+        content_or_style: content # default is balanced
+        # The simple answer is that it changes the timestep sampling during training. content will favor earlier timesteps and style will favor later timesteps. It gets a little more complicated with flux, as I found the best way to work around the distillation is to do sigmoid timesteps, which favor timesteps in the middle. However you can still use content or style while also using signoid timesteps. The math gets weird but it would still favor the earlier and later timesteps but still be more distributed toward the center.
+        # For most things, just leave it balanced which is the default. The real benefit of it is while training controlnets/t2i adapters. content is pretty much a requirement there and speeds up training 10x or so. For things like a detailer, that is where style comes in handy. In fact, to clean up the noisy residual in SD3, style would be a good choice.
         batch_size: 1
-        steps: 5000  # total number of steps to train 500 - 4000 is a good range
+        steps: 10000  # total number of steps to train 500 - 4000 is a good range
         gradient_accumulation_steps: 1
         train_unet: true
         train_text_encoder: false  # probably won't work with flux
@@ -55,7 +70,12 @@ config:
         gradient_checkpointing: true  # need the on unless you have a ton of vram
         noise_scheduler: "flowmatch" # for training only
         optimizer: "adamw8bit"
-        lr: 3e-4
+        # For character use 1e-4 (best for adamw8bit). 
+        # For styles,  I use an LR of 2e-4 or 3e-4 and the Regularization images should be captioned with the content and the style description
+        # (the style of the reg).
+        # I also use a higher reg_weight of 0.35 or 0.40 for styles.
+        lr: 8e-5
+
         # uncomment this to skip the pre training sample
         skip_first_sample: true
         # uncomment to completely disable sampling
@@ -84,6 +104,13 @@ config:
         prompts:
           # you can add [trigger] to the prompts here and it will be replaced with the trigger word
           - close headshot portrait photograph of ohwx man wearing a super expensive white suit, a light blue shirt and a black tie in a photo studio lighting hdr. The studio backdrop is a rich, deep black that makes the white suit pop dramatically. Professional lighting creates a perfect balance of highlights and shadows, accentuating his facial features. The suit is impeccably tailored, with subtle textures visible in the fabric. His tie is made of the finest silk, with a subtle pattern that catches the light. his expression is one of confident professionalism<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
+
+          - "woman holding a sign that says 'I LOVE PROMPTS!'"
+          - "a beautiful young woman on a beach"
+          - "woman with red hair, playing chess at the park, bomb going off in the background"
+          - "a man playing the guitar, on stage, singing a song, laser lights, punk rocker"
+          - "hipster man with a beard, building a chair, in a wood shop"                    
+          - "a muscular man, in a post apocalyptic world, with a shotgun, in a leather jacket, in a desert, with a motorcycle"                    
 
           - mid portrait photograph of ohwx man wearing a super expensive black suit, a white shirt and a blue tie in a photo studio lighting hdr. The studio backdrop is a rich, deep white that makes the black suit pop dramatically. Professional lighting creates a perfect balance of highlights and shadows, accentuating his facial features. The suit is impeccably tailored, with subtle textures visible in the fabric. His tie is made of the finest silk, with a subtle pattern that catches the light. his expression is one of confident professionalism<segment:yolo-face_yolov9c.pt-1,0.7,0.5>photograph of ohwx man
 
